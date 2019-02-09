@@ -9,6 +9,7 @@
 
 #include "SwigClient.h"
 
+using namespace std;
 using namespace SwigClient;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -25,6 +26,12 @@ bool BlockDataViewer::hasRemoteDB(void)
 bool BlockDataViewer::connectToRemote()
 {
    return bdvAsync_.connectToRemote();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void BlockDataViewer::addPublicKey(const SecureBinaryData& pubkey)
+{
+   bdvAsync_.addPublicKey(pubkey);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -449,6 +456,12 @@ string SwigClient::BtcWallet::registerAddresses(
    const vector<BinaryData>& addrVec, bool isNew)
 {
    return asyncWallet_.registerAddresses(addrVec, isNew);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+string SwigClient::BtcWallet::setUnconfirmedTarget(unsigned confTarget)
+{
+   return asyncWallet_.setUnconfirmedTarget(confTarget);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

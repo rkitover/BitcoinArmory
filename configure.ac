@@ -119,18 +119,21 @@ if test "x$cross_compiling" != "xyes"; then
 	AX_SWIG_PYTHON([no])
 	AS_IF([test -z $AX_SWIG_PYTHON_CPPFLAGS], 
 		[AC_MSG_ERROR([failed to procure swig include path, make sure swig is installed])])
-	AC_SUBST([PYTHON_CFLAGS], [`python-config --cflags`])
-	AC_SUBST([PYTHON_LDFLAGS], [`python-config --ldflags`])
+	AC_SUBST([PYTHON_CFLAGS], [`$PYTHON-config --cflags`])
+	AC_SUBST([PYTHON_LDFLAGS], [`$PYTHON-config --ldflags`])
 	AX_PYTHON_MODULE([psutil], [fatal])
 else
-AC_SUBST([AX_SWIG_PYTHON_CPPFLAGS], [`python-config --includes`])
-AC_SUBST([PYTHON_CFLAGS], [`python-config --cflags`])
-AC_SUBST([PYTHON_LDFLAGS], [`python-config --ldflags`])
+AC_SUBST([AX_SWIG_PYTHON_CPPFLAGS], [`$PYTHON-config --includes`])
+AC_SUBST([PYTHON_CFLAGS], [`$PYTHON-config --cflags`])
+AC_SUBST([PYTHON_LDFLAGS], [`$PYTHON-config --ldflags`])
 fi
 
 AC_MSG_RESULT([AX_SWIG_PYTHON_CPPFLAGS: $AX_SWIG_PYTHON_CPPFLAGS])
 AC_MSG_RESULT([PYTHON_CFLAGS: $PYTHON_LDFLAGS])
 AC_MSG_RESULT([PYTHON_LDFLAGS: $PYTHON_LDFLAGS])
+
+if test "x$with_gui" = "xyes"; then
+#check for  gui
 
 AC_CHECK_PROG([HAVE_PYRCC4], [pyrcc4], [yes], [no])
 AS_IF([test $HAVE_PYRCC4 == yes], [],
@@ -140,6 +143,7 @@ AC_CHECK_PROG([HAVE_LRELEASE], [lrelease], [yes], [no])
 AS_IF([test $HAVE_LRELEASE == yes], [],
 	[AC_MSG_ERROR([missing lrelease in path, make sure qt4-linguist-tools is installed])]) 
 
+fi
 fi
 
 AC_SUBST([CXX_STANDARD], $CXX_STANDARD)
@@ -188,7 +192,7 @@ case $host in
   *linux*)
     BUILD_OS=linux
 
-    if test "x$build_client" = "xyes"; then
+    if test "x$build_client$with_gui" = "xyesyes"; then
        # Check existence of Qt packages.
        if ! pkg-config --exists 'QtCore >= 4.8 QtCore <= 5 QtGui >= 4.8 QtGui <= 5'; then
        	   AC_MSG_ERROR([missing QtCore library, make sure libqtcore4 and libqt4-dev are installed])
@@ -243,10 +247,11 @@ dnl ac_configure_args can only be set once and affects all subdirs.
 dnl Place all params here.
 dnl Crypto++ - No customs
 dnl libchacha20poly1305 - No customs
-dnl libbtc - --disable-wallet --disable-tools
+dnl libbtc - --disable-wallet --disable-net --disable-tools
 dnl libsecp256k1 (libbtc) - --disable-shared --with-pic --with-bignum=no
-dnl NB: --disable-wallet left off for now. Upstream issues kill debug builds.
-ac_configure_args="${orig_config_args} --disable-tools --disable-shared --with-pic --with-bignum=no"
+dnl NB: For libbtc, wallet & net are basically intertwined. If disabling one,
+dnl     both must be disabled, else weird compiler/linker errors appear.
+ac_configure_args="${orig_config_args} --disable-wallet --disable-net --disable-tools --disable-shared --with-pic --with-bignum=no"
 AC_CONFIG_SUBDIRS([cppForSwig/libbtc])
 AM_COND_IF([USE_CRYPTOPP], [AC_CONFIG_SUBDIRS([cppForSwig/cryptopp])], [])
 

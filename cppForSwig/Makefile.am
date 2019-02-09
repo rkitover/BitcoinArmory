@@ -17,6 +17,12 @@ LIBSECP256K1 = libbtc/src/secp256k1/libsecp256k1.la
 DIST_SUBDIRS = libbtc chacha20poly1305
 SUBDIRS = libbtc chacha20poly1305 $(MAYBE_BUILD)
 
+# Unit test flags.
+UNIT_TEST_CXXFLAGS=
+if BUILD_TESTS
+UNIT_TEST_CXXFLAGS += -DUNIT_TESTS
+endif
+
 # Flag used to determine if the code will *only* use libbtc, and not Crypto++.
 LIBBTC_FLAGS =
 
@@ -70,6 +76,7 @@ INCLUDE_FILES = -Ibech32/ref/c++ -Ilmdb/libraries/liblmdb \
 # might not hurt one of these days. Some of the "common" files could be GUI/CLI
 # files but are "common" for the sake of unit testing. In an ideal world, the
 # unit tests would be split into multiple files as needed. One day....
+KEYMANAGER_SOURCE_FILES = KeyManager.cpp
 ARMORYDB_SOURCE_FILES = main.cpp
 ARMORYGUI_SOURCE_FILES = TransactionBatch.cpp
 ARMORYCLI_SOURCE_FILES = BDM_mainthread.cpp \
@@ -107,6 +114,7 @@ ARMORYCOMMON_SOURCE_FILES = Accounts.cpp \
 	AssetEncryption.cpp \
 	Assets.cpp \
 	AsyncClient.cpp \
+	AuthorizedPeers.cpp \
 	BinaryData.cpp \
 	BIP32_Node.cpp \
 	BlockDataManagerConfig.cpp \
@@ -140,6 +148,8 @@ ARMORYCOMMON_SOURCE_FILES = Accounts.cpp \
 
 if ! USE_CRYPTOPP
 ARMORYCOMMON_SOURCE_FILES += EncryptionUtils_libbtc.cpp
+else
+ARMORYCOMMON_SOURCE_FILES += EncryptionUtils.cpp
 endif
 
 PROTOBUF_PROTO = protobuf/AddressBook.proto \
@@ -187,7 +197,7 @@ libArmoryCommon_la_SOURCES = $(ARMORYCOMMON_SOURCE_FILES)
 nodist_libArmoryCommon_la_SOURCES = $(PROTOBUF_CC) $(PROTOBUF_H)
 libArmoryCommon_la_CPPFLAGS = $(AM_CPPFLAGS) $(INCLUDE_FILES)
 libArmoryCommon_la_CXXFLAGS = $(AM_CXXFLAGS) $(LIBBTC_FLAGS) \
-			      -D__STDC_LIMIT_MACROS
+			      $(UNIT_TEST_CXXFLAGS) -D__STDC_LIMIT_MACROS
 libArmoryCommon_la_LIBADD = $(LIBLMDB) \
 				$(LIBCRYPTOPP) \
 				$(LIBBTC) \
@@ -201,34 +211,51 @@ libArmoryCLI_la_SOURCES = $(ARMORYCLI_SOURCE_FILES)
 libArmoryCLI_la_CPPFLAGS = $(AM_CPPFLAGS) $(INCLUDE_FILES) \
 			$(PYTHON_CFLAGS)
 libArmoryCLI_la_CXXFLAGS = $(AM_CXXFLAGS) $(LIBBTC_FLAGS) \
-			   -Ilmdb/libraries/liblmdb -D__STDC_LIMIT_MACROS
+			   $(UNIT_TEST_CXXFLAGS) -Ilmdb/libraries/liblmdb -D__STDC_LIMIT_MACROS
 libArmoryCLI_la_LIBADD = $(LIBBTC) \
 			 $(LIBCHACHA20POLY1305) \
 			 $(LIBARMORYCOMMON) \
 			 $(LIBCRYPTOPP) \
-			 $(LIBLMDB)
+			 $(LIBLMDB) \
 			 -lpthread
 libArmoryCLI_la_LDFLAGS = $(LDFLAGS) $(LWSLDFLAGS)
 
 # ArmoryDB binary
 bin_PROGRAMS += ArmoryDB
 ArmoryDB_SOURCES = $(ARMORYDB_SOURCE_FILES)
-ArmoryDB_CXXFLAGS = $(AM_CXXFLAGS) $(LIBBTC_FLAGS) -D__STDC_LIMIT_MACROS
+ArmoryDB_CXXFLAGS = $(AM_CXXFLAGS) $(LIBBTC_FLAGS) $(UNIT_TEST_CXXFLAGS) \
+			-D__STDC_LIMIT_MACROS
 ArmoryDB_CPPFLAGS = $(AM_CPPFLAGS) $(INCLUDE_FILES)
 ArmoryDB_LDADD = $(LIBARMORYCOMMON) \
 		 $(LIBARMORYCLI) \
 		 $(LIBCRYPTOPP) \
 		 $(LIBBTC) \
+		 $(LIBCHACHA20POLY1305) \
 		 $(LIBLMDB) \
 		 -lpthread -lprotobuf -lwebsockets
 ArmoryDB_LDFLAGS = $(LWSLDFLAGS) $(LDFLAGS) -static
+
+# KeyManager binary
+bin_PROGRAMS += BIP150KeyManager
+BIP150KeyManager_SOURCES = $(KEYMANAGER_SOURCE_FILES)
+BIP150KeyManager_CXXFLAGS = $(AM_CXXFLAGS) $(LIBBTC_FLAGS) $(UNIT_TEST_CXXFLAGS) \
+			-D__STDC_LIMIT_MACROS
+BIP150KeyManager_CPPFLAGS = $(AM_CPPFLAGS) $(INCLUDE_FILES)
+BIP150KeyManager_LDADD = $(LIBARMORYCOMMON) \
+		 $(LIBARMORYCLI) \
+		 $(LIBCRYPTOPP) \
+		 $(LIBBTC) \
+		 $(LIBCHACHA20POLY1305) \
+		 $(LIBLMDB) \
+		 -lpthread -lprotobuf -lwebsockets
+BIP150KeyManager_LDFLAGS = $(LWSLDFLAGS) $(LDFLAGS) -static
 
 if BUILD_CLIENT
 # Common GUI functionality library
 lib_LTLIBRARIES += $(LIBARMORYGUI)
 libArmoryGUI_la_SOURCES = $(ARMORYGUI_SOURCE_FILES)
 libArmoryGUI_la_CPPFLAGS = $(AM_CPPFLAGS) $(INCLUDE_FILES) $(PYTHON_CFLAGS)
-libArmoryGUI_la_CXXFLAGS = $(AM_CXXFLAGS) -D__STDC_LIMIT_MACROS
+libArmoryGUI_la_CXXFLAGS = $(AM_CXXFLAGS) $(UNIT_TEST_CXXFLAGS) -D__STDC_LIMIT_MACROS
 libArmoryGUI_la_LIBADD = $(LIBARMORYCOMMON) $(LIBCRYPTOPP) \
 			-lpthread
 libArmoryGUI_la_LDFLAGS = $(LDFLAGS) $(LWSLDFLAGS) $(PYTHON_LDFLAGS) -shared
@@ -240,7 +267,7 @@ libCppBlockUtils_la_SOURCES = CppBlockUtils_wrap.cxx
 libCppBlockUtils_la_CPPFLAGS = $(AM_CPPFLAGS) $(INCLUDE_FILES) \
 				$(PYTHON_CFLAGS)
 libCppBlockUtils_la_CXXFLAGS = $(AM_CXXFLAGS) -Ilmdb/libraries/liblmdb \
-				-D__STDC_LIMIT_MACROS
+				$(UNIT_TEST_CXXFLAGS) -D__STDC_LIMIT_MACROS
 libCppBlockUtils_la_LIBADD = $(LIBARMORYCOMMON) $(LIBARMORYGUI) \
 				$(LIBCRYPTOPP) -lpthread
 libCppBlockUtils_la_LDFLAGS = $(LDFLAGS) $(LWSLDFLAGS) $(PYTHON_LDFLAGS) -shared
@@ -272,6 +299,7 @@ clean-local:
 #	rm -f CppBlockUtils_wrap.cxx
 #	rm -f CppBlockUtils_wrap.h
 ################################################################################
+	rm -f BIP150KeyManager
 
 protobuf_clean:
 	rm -f protobuf/*.pb.*
