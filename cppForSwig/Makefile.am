@@ -306,8 +306,6 @@ protobuf_clean:
 
 # .include file prevents gtest subdir from building a second copy of Armory.
 # Also provides a convenient spot to place all test-related materials.
-########################### Altered for ArmoryDB repo ##########################
-#if BUILD_TESTS
-#include Makefile.tests.include
-#endif
-################################################################################
+if BUILD_TESTS
+include Makefile.tests.include
+endif
