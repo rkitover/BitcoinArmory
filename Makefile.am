@@ -102,7 +102,9 @@ endif
 	mkdir -p $(DESTDIR)$(prefix)/bin
 # Sometimes, uninstall-old deletes a valid ArmoryDB. Copy again to be safe.
 	cp ArmoryDB $(DESTDIR)$(prefix)/bin
-	cp -R $(LWS_LIB_LOC)/libwebsockets.so* $(DESTDIR)$(prefix)/lib/
+########################### Altered for ArmoryDB repo ##########################
+#	cp -R $(LWS_LIB_LOC)/libwebsockets.so* $(DESTDIR)$(prefix)/lib/
+################################################################################
 
 # See the earlier comment about Autotools, redistributables, and RPATH. (Linux
 # uses patchelf, Macs use install_name_tool, which is installed by Xcode.) While
