@@ -373,9 +373,17 @@ void BlockDataManagerConfig::parseArgs(int argc, char* argv[])
          if (!fileExists(path, mode))
          {
             stringstream ss;
-            ss << path << " is not a valid path";
+            ss << path << " is not a valid path. ArmoryDB will create the path.";
 
             cout << ss.str() << endl;
+            // ArmoryDB repo fork
+            // For now, this works only for *NIX machines. Windows to be added.
+#ifdef _WIN32
+            CreateDirectory(path.c_str(), NULL);
+#else
+            mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
+
             throw DbErrorMsg(ss.str());
          }
       };
