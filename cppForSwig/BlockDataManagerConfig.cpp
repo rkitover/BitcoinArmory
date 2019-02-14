@@ -25,11 +25,14 @@ using namespace std;
 // NodeStatusStruct
 //
 ////////////////////////////////////////////////////////////////////////////////
-ARMORY_DB_TYPE BlockDataManagerConfig::armoryDbType_ = ARMORY_DB_FULL;
+// ArmoryDB repo
+// Default DB type is supernode.
+ARMORY_DB_TYPE BlockDataManagerConfig::armoryDbType_ = ARMORY_DB_SUPER;
 SOCKET_SERVICE BlockDataManagerConfig::service_ = SERVICE_WEBSOCKET;
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// ArmoryDB repo: Default directories switched - Armory -> ArmoryDB
 const string BlockDataManagerConfig::dbDirExtention_ = "/databases";
 #if defined(_WIN32)
 const string BlockDataManagerConfig::defaultDataDir_ = 
@@ -80,6 +83,47 @@ const string BlockDataManagerConfig::defaultRegtestBlkFileLocation_ =
 
 string BlockDataManagerConfig::dataDir_ = "";
 bool BlockDataManagerConfig::ephemeralPeers_ = false;
+
+// ArmoryDB repo
+// Helper function that allows for recursive creation of a directory path.
+int mkdir_p(const char *path)
+{
+    /* Adapted from http://stackoverflow.com/a/2336245/119527 */
+    const size_t len = strlen(path);
+    char _path[PATH_MAX];
+    char *p;
+
+    errno = 0;
+
+    /* Copy string so its mutable */
+    if (len > sizeof(_path)-1) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+    strcpy(_path, path);
+
+    /* Iterate the string */
+    for (p = _path + 1; *p; p++) {
+        if (*p == '/') {
+            /* Temporarily truncate */
+            *p = '\0';
+
+            if (mkdir(_path, S_IRWXU) != 0) {
+                if (errno != EEXIST)
+                    return -1;
+            }
+
+            *p = '/';
+        }
+    }
+
+    if (mkdir(_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+        if (errno != EEXIST)
+            return -1;
+    }
+
+    return 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 BlockDataManagerConfig::BlockDataManagerConfig() :
@@ -370,21 +414,25 @@ void BlockDataManagerConfig::parseArgs(int argc, char* argv[])
       //test all paths
       auto testPath = [](const string& path, int mode)
       {
+         // ArmoryDB repo fork
+         // This if statement has changed in order to allow for automatic
+         // generation of incoming directory paths if they don't exist. mkdir()
+         // --> mkdir_p().
          if (!fileExists(path, mode))
          {
             stringstream ss;
             ss << path << " is not a valid path. ArmoryDB will create the path.";
 
             cout << ss.str() << endl;
-            // ArmoryDB repo fork
-            // For now, this works only for *NIX machines. Windows to be added.
 #ifdef _WIN32
-            CreateDirectory(path.c_str(), NULL);
+            if (!CreateDirectory(path.c_str(), NULL)) {
+               throw DbErrorMsg(ss.str());
+            }
 #else
-            mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            if (mkdir_p(path.c_str()) != 0) {
+               throw DbErrorMsg(ss.str());
+            }
 #endif
-
-            throw DbErrorMsg(ss.str());
          }
       };
 
@@ -399,10 +447,12 @@ void BlockDataManagerConfig::parseArgs(int argc, char* argv[])
          }
          catch (DbErrorMsg&)
          {
+// ArmoryDB repo
+// mkdir --> mkdir_p
 #ifdef _WIN32
             CreateDirectory(dbDir_.c_str(), NULL);
 #else
-            mkdir(dbDir_.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            mkdir_p(dbDir_.c_str());
 #endif
          }
       }
