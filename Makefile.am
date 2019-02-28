@@ -67,6 +67,9 @@ all-local: copy-script lrelease qrc_img_resources.py
 #target to clean up pre autotools installation left overs
 uninstall-old:
 	rm -f $(DESTDIR)$(prefix)/bin/ArmoryDB
+########################### Altered for ArmoryDB repo ##########################
+	rm -f $(DESTDIR)$(prefix)/bin/BIP150KeyManager
+################################################################################
 
 install-exec-hook: uninstall-old
 if BUILD_CLIENT
@@ -87,6 +90,9 @@ endif
 	mkdir -p $(DESTDIR)$(prefix)/bin
 # Sometimes, uninstall-old deletes a valid ArmoryDB. Copy again to be safe.
 	cp ArmoryDB $(DESTDIR)$(prefix)/bin
+########################### Altered for ArmoryDB repo ##########################
+	cp BIP150KeyManager $(DESTDIR)$(prefix)/bin
+################################################################################
 
 # No need to install test binaries.
 if BUILD_TESTS
@@ -110,6 +116,9 @@ uninstall-hook: uninstall-old
 
 clean-local:
 	rm -f ArmoryDB
+########################### Altered for ArmoryDB repo ##########################
+	rm -f BIP150KeyManager
+################################################################################
 	rm -f lib/*
 if BUILD_CLIENT
 	rm -f CppBlockUtils.py
