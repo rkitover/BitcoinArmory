@@ -26,7 +26,7 @@ Once libwebsockets has been compiled, you may compile Armory. The following step
 
 ```
 ./autogen.sh
-./configure --disable-shared
+./configure
 make
 ```
 
@@ -37,11 +37,11 @@ Overall, Armory uses static linking. There will still be a few dependencies, as 
 ## Changes
 The following changes have been made compared to the upstream version of Armory:
 
-- Everything other than the C++ code required to build ArmoryDB, along with support files (e.g., Autotools), have been removed completely.
+- Everything other than the C++ files required to build ArmoryDB, along with support files (e.g., Autotools), have been removed completely.
 - The Autotools files have been modified slightly to enforce the production of only ArmoryDB.
 - Crypto++ has been removed completely. ArmoryDB *must* compile with support for [libbtc](https://github.com/libbtc/libbtc).
-- Some `patchelf` calls are disabled. They're required only for shared builds and can mess with the build system otherwise. This needs to be fixed upstream.
 - README.md has been moved to README\_upstream.md.
+- The Armory-specific "public mode" of BIP 150 is the default (i.e., verify the server but not the client). Users who wish to do two-way verification will need to invoke `ArmoryDB` with the `--fullbip150` flag, which restores ArmoryDB to the default BIP 150 behavior for the upstream ArmoryDB.
 
 ## Possible future changes
 In the future, it may be worthwhile to do the following:
