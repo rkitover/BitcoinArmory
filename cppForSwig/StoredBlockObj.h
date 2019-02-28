@@ -27,7 +27,7 @@
 #include "BlockDataManagerConfig.h"
 
 #define ARMORY_DB_VERSION   0x9701
-#define ARMORY_DB_DEFAULT   ARMORY_DB_SUPER
+#define ARMORY_DB_DEFAULT   ARMORY_DB_FULL
 #define UTXO_STORAGE        SCRIPT_UTXO_VECTOR
 
 enum DB_TX_AVAIL
@@ -126,7 +126,7 @@ public:
    BinaryData      topScannedBlkHash_; //32 bytes
    uint32_t        appliedToHgt_=0;
    uint32_t        armoryVer_=ARMORY_DB_VERSION;
-   ARMORY_DB_TYPE  armoryType_=ARMORY_DB_SUPER; //default db mode
+   ARMORY_DB_TYPE  armoryType_=ARMORY_DB_FULL; //default db mode
    uint64_t metaInt_ = UINT64_MAX;
 };
 

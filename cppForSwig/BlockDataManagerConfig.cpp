@@ -295,6 +295,13 @@ void BlockDataManagerConfig::parseArgs(int argc, char* argv[])
    --public: BIP150 auth will allow for anonymous requesters. While only clients
    can be anon (servers/responders are always auth'ed), both sides need to enable
    public channels for the handshake to succeed
+/////////////////////////// Altered for ArmoryDB repo //////////////////////////
+   This fork makes --public the default case. Users need not use it.
+
+   --fullbip150: BIP150 auth will not allow any anonymous participants. Both
+   sides must authenticate each other. (This is the default behavior in the
+   upstream ArmoryDB. fullbip150 is set only in this fork.)
+////////////////////////////////////////////////////////////////////////////////
 
    ***/
 
@@ -674,6 +681,15 @@ void BlockDataManagerConfig::processArgs(const map<string, string>& args,
    {
       startupBIP150CTX(4, true);
    }
+
+/////////////////////////// Altered for ArmoryDB repo //////////////////////////
+   // fullbip150
+   iter = args.find("fullbip150");
+   if (iter != args.end())
+   {
+      startupBIP150CTX(4, false);
+   }
+////////////////////////////////////////////////////////////////////////////////
 }
 
 ////////////////////////////////////////////////////////////////////////////////
