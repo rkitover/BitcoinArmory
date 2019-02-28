@@ -35,6 +35,9 @@ copy-script:
 # SOURCE 3: https://github.com/conda/conda-build/issues/279
 # SOURCE 4: https://longwei.github.io/rpath_origin/
 	cp cppForSwig/ArmoryDB ./ArmoryDB
+########################### Altered for ArmoryDB repo ##########################
+	cp cppForSwig/BIP150KeyManager ./BIP150KeyManager
+################################################################################
 
 # SWIG code and requirements.
 if BUILD_CLIENT
