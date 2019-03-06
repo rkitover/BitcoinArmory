@@ -47,7 +47,7 @@ AC_ARG_WITH([gui],
 # uses /usr/local. The problem is that Ubuntu has a pretty old version of LWS.
 # We should just use a newer version and link it in.
 ########################### Altered for ArmoryDB repo ##########################
-with_own_lws=`pwd`/libwebsockets-3.0.1/build
+with_own_lws=`pwd`/libwebsockets/build
 AC_ARG_WITH([own-lws],
 		AS_HELP_STRING([--with-own-lws], 
 		[pass path of your own lws binary and headers @<:@default=no@:>@]),

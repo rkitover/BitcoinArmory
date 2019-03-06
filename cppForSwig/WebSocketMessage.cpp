@@ -388,7 +388,7 @@ bool WebSocketMessagePartial::parsePacket(const BinaryDataRef& dataRef)
    }
 
    default:
-      LOGERR << "invalid packet size";
+      LOGERR << "invalid packet type";
    }
 
    return false;
@@ -403,6 +403,8 @@ bool WebSocketMessagePartial::parseSinglePacket(const BinaryDataRef& bdr)
    nbytes payload
    */
 
+   if (id_ != UINT32_MAX)
+      return false;
    BinaryRefReader brr(bdr);
 
    type_ = brr.get_uint8_t();
