@@ -10,7 +10,7 @@ sudo apt install protobuf
 ```
 
 ### libwebsockets
-Note that ArmoryDB requires libwebsockets. It's not fully confirmed that the default version of libwebsockets included by Ubuntu will work properly with ArmoryDB. Therefore, to keep things simple, this repo includes a clean copy of [v3.0.1 of libwebsockets](https://github.com/warmcat/libwebsockets/tree/v3.0.1). This must be compiled before compiling Armory. For now, the ArmoryDB build process does *not* automatically compile libwebsockets. This step must be done manually.
+Note that ArmoryDB requires libwebsockets. The default version of libwebsockets included by Ubuntu (as of 18.10) will not work properly with ArmoryDB. To keep things simple, this repo includes a clean copy of [v3.1.0 of libwebsockets](https://github.com/warmcat/libwebsockets/tree/v3.1.0). This must be compiled before compiling Armory. For now, the ArmoryDB build process does *not* automatically compile libwebsockets. This step must be done manually.
 
 Go into the libwebsockets subdirectory and issue the following commands.
 
