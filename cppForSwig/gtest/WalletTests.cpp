@@ -902,6 +902,145 @@ TEST_F(WalletsTest, BIP32_Public_Chain)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+TEST_F(WalletsTest, BIP32_ArmoryDefault)
+{
+   vector<unsigned> derivationPath = {
+   0x80000050,
+   0x800005de,
+   0x8000465a,
+   501};
+
+   auto&& seed = CryptoPRNG::generateRandom(32);
+
+   //create empty wallet
+   SecureBinaryData passphrase("password");
+   auto assetWlt = AssetWallet_Single::createFromSeed_BIP32(
+      homedir_, seed, derivationPath, passphrase, 5);
+
+   auto accId = assetWlt->getMainAccountID();
+   auto accRoot = assetWlt->getAccountRoot(accId);
+   auto accRootPtr = dynamic_pointer_cast<AssetEntry_BIP32Root>(accRoot);
+
+   BIP32_Node node;
+   node.initFromSeed(seed);
+   for (auto id : derivationPath)
+      node.derivePrivate(id);
+   node.derivePrivate(0);
+
+   EXPECT_EQ(accRootPtr->getPubKey()->getCompressedKey(), node.getPublicKey());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+TEST_F(WalletsTest, BIP32_Chain_AddAccount)
+{
+   vector<unsigned> derivationPath1 = { 
+      0x80000050, 
+      0x800005de, 
+      0x8000465a,
+      501
+   };
+
+   //random seed
+   auto&& seed = CryptoPRNG::generateRandom(32);
+
+   //create empty wallet
+   SecureBinaryData passphrase("password");
+   auto assetWlt = AssetWallet_Single::createFromSeed_BIP32_Blank(
+      homedir_, seed, passphrase);
+
+   //this is a hard derivation scenario, the wallet needs to be able to 
+   //decrypt its root's private key
+   auto passphraseLbd = [&passphrase](const BinaryData&)->SecureBinaryData
+   {
+      return passphrase;
+   };
+   assetWlt->setPassphrasePromptLambda(passphraseLbd);
+
+   //add bip32 account for derivationPath1
+   auto accountID = assetWlt->createBIP32Account(nullptr, derivationPath1);
+
+   //derive bip32 node
+   BIP32_Node seedNode;
+   seedNode.initFromSeed(seed);
+   for (auto& derId : derivationPath1)
+      seedNode.derivePrivate(derId);
+   
+   auto outerNode = seedNode;
+   outerNode.derivePrivate(0);
+
+   //check vs wallet account root
+   auto accountRoot = assetWlt->getAccountRoot(accountID);
+   auto accountRoot_BIP32 = 
+      dynamic_pointer_cast<AssetEntry_BIP32Root>(accountRoot);
+   auto& pubkeyAcc = accountRoot_BIP32->getPubKey()->getCompressedKey();
+   EXPECT_EQ(pubkeyAcc, outerNode.getPublicKey());
+
+   {
+      /*check encryption for the added account works*/
+
+      //try to fetch without locking wallet
+      try
+      {
+         auto& accountPrivKey =
+            assetWlt->getDecryptedValue(accountRoot_BIP32->getPrivKey());
+         
+         //should not get here
+         ASSERT_TRUE(false);
+      }
+      catch (DecryptedDataContainerException&)
+      {}
+
+      //now with the lock
+      try
+      {
+         auto lock = assetWlt->lockDecryptedContainer();
+         auto& accountPrivKey =
+            assetWlt->getDecryptedValue(accountRoot_BIP32->getPrivKey());
+
+         EXPECT_EQ(accountPrivKey, outerNode.getPrivateKey());
+      }
+      catch (...)
+      {
+         //should not get here
+         ASSERT_TRUE(false);
+      }
+   }
+
+   //path 2
+   vector<unsigned> derivationPath2 = {
+      0x80000244,
+      0x8000be7a,
+      0x80002000,
+      304
+   };
+
+   auto accountTypePtr =
+      make_shared<AccountType_BIP32_Custom>(derivationPath2);
+   accountTypePtr->setAddressTypes({ AddressEntryType_P2WPKH, AddressEntryType_P2PK });
+   accountTypePtr->setDefaultAddressType(AddressEntryType_P2WPKH);
+   accountTypePtr->setNodes({ 50, 60 });
+   accountTypePtr->setOuterAccountID(WRITE_UINT32_BE(50));
+   accountTypePtr->setInnerAccountID(WRITE_UINT32_BE(60));
+
+   //add bip32 custom account for derivationPath2
+   accountID = assetWlt->createBIP32Account(
+      nullptr, derivationPath2, accountTypePtr);
+
+   BIP32_Node seedNode2;
+   seedNode2.initFromSeed(seed);
+   for (auto& derId : derivationPath2)
+      seedNode2.derivePrivate(derId);
+   seedNode2.derivePrivate(50);
+
+   //check vs wallet account root
+   accountRoot = assetWlt->getAccountRoot(accountID);
+   accountRoot_BIP32 =
+      dynamic_pointer_cast<AssetEntry_BIP32Root>(accountRoot);
+   auto& pubkey2 = accountRoot_BIP32->getPubKey()->getCompressedKey();
+   EXPECT_EQ(pubkey2, seedNode2.getPublicKey());
+}
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 class WalletMetaDataTest : public ::testing::Test
